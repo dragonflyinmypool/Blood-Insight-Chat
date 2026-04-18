@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Blood Test Tracker"
+version = "1.0.0"
+id = "artifacts/blood-test-tracker"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20512
+
+[services.development]
+run = "pnpm --filter @workspace/blood-test-tracker run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/blood-test-tracker", "run", "build" ]
+publicDir = "artifacts/blood-test-tracker/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20512"
+BASE_PATH = "/"
