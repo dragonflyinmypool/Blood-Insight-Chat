@@ -78,9 +78,11 @@ export function UploadTestDialog({ children }: { children: React.ReactNode }) {
               setNotes("");
             },
             onError: (error) => {
+              const data = error?.data as { error?: string } | null;
+              const isDuplicate = error?.status === 409;
               toast({
-                title: "Upload failed",
-                description: error?.error || "There was a problem processing your PDF.",
+                title: isDuplicate ? "Already uploaded" : "Upload failed",
+                description: data?.error || "There was a problem processing your PDF.",
                 variant: "destructive",
               });
             },

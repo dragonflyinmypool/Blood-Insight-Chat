@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, sql, desc } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { db, bloodTestsTable, bloodTestResultsTable } from "@workspace/db";
 import {
   UploadBloodTestBody,
@@ -91,6 +92,22 @@ router.post("/blood-tests", async (req, res): Promise<void> => {
 
   const { fileName, pdfBase64, notes } = parsed.data;
 
+  const contentHash = createHash("sha256").update(pdfBase64).digest("hex");
+
+  const [existing] = await db
+    .select({ id: bloodTestsTable.id, fileName: bloodTestsTable.fileName, testDate: bloodTestsTable.testDate, createdAt: bloodTestsTable.createdAt })
+    .from(bloodTestsTable)
+    .where(eq(bloodTestsTable.contentHash, contentHash))
+    .limit(1);
+
+  if (existing) {
+    const uploadedOn = existing.createdAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    res.status(409).json({
+      error: `This blood test has already been uploaded (originally added on ${uploadedOn} as "${existing.fileName}").`,
+    });
+    return;
+  }
+
   let extracted: {
     testDate?: string | null;
     labName?: string | null;
@@ -116,6 +133,7 @@ router.post("/blood-tests", async (req, res): Promise<void> => {
     .insert(bloodTestsTable)
     .values({
       fileName,
+      contentHash,
       testDate: extracted.testDate ?? null,
       labName: extracted.labName ?? null,
       patientName: extracted.patientName ?? null,

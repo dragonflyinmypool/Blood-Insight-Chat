@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 export const bloodTestsTable = pgTable("blood_tests", {
   id: serial("id").primaryKey(),
   fileName: text("file_name").notNull(),
+  contentHash: text("content_hash"),
   testDate: text("test_date"),
   labName: text("lab_name"),
   patientName: text("patient_name"),
