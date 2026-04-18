@@ -9,6 +9,7 @@ import {
   ListMarkerHistoryQueryParams,
 } from "@workspace/api-zod";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { OPENAI_MODEL } from "../lib/openaiModel";
 import pdfParse from "pdf-parse";
 
 const router: IRouter = Router();
@@ -56,7 +57,7 @@ Rules:
 - Return ONLY valid JSON, no other text`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5.2",
+    model: OPENAI_MODEL,
     max_completion_tokens: 8192,
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },

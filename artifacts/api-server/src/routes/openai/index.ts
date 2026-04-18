@@ -10,6 +10,7 @@ import {
   SendOpenaiMessageBody,
 } from "@workspace/api-zod";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { OPENAI_MODEL } from "../../lib/openaiModel";
 
 const router: IRouter = Router();
 
@@ -152,7 +153,7 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
   let fullResponse = "";
 
   const stream = await openai.chat.completions.create({
-    model: "gpt-5.2",
+    model: OPENAI_MODEL,
     max_completion_tokens: 8192,
     messages: chatMessages,
     stream: true,
