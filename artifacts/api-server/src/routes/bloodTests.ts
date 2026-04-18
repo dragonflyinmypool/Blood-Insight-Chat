@@ -47,6 +47,8 @@ Return a JSON object with this exact structure:
 }
 
 Rules:
+- IMPORTANT: All output must be in English regardless of the language of the source document. Translate all marker names, units, lab names, and any other text fields into English.
+- Use standard English medical terminology for marker names (e.g. "Hemoglobin", "Glucose", "White Blood Cells", "Cholesterol", etc.)
 - Extract ALL lab markers/biomarkers you can find
 - If a value is not numeric, set value to null
 - If reference range is not given, set referenceRangeLow and referenceRangeHigh to null
