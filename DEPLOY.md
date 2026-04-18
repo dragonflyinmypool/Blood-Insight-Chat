@@ -44,10 +44,9 @@ DATABASE_URL="<railway-postgres-url>" pnpm db:push
 
 ## 5. Frontend
 
-The React app in `artifacts/blood-test-tracker` is Vite-built. Either:
+The React app in `artifacts/blood-test-tracker` is Vite-built to `dist/public/` and served by the api-server automatically (single service). Any non-`/api/*` path returns `index.html` so client-side routing works.
 
-- Deploy it as a second Railway service (static) and point it at the api URL, or
-- Serve the built frontend from the api-server (not wired up yet — add `express.static` against `artifacts/blood-test-tracker/dist` if you want a single service).
+Override the served directory with `FRONTEND_DIST=/path/to/dist` if needed.
 
 ## Local development
 
