@@ -16,19 +16,36 @@ Edge functions run in Supabase's Docker containers, so when they need to reach h
 
 ## Full startup (cold)
 
-Prerequisites: Docker Desktop running, Supabase CLI installed (`supabase --version`), pnpm installed (`pnpm --version`), LM Studio running on `:1234` with an instruct model loaded (or real `OPENAI_API_KEY` in `supabase/functions/.env`).
+### Prerequisites
 
-First time only:
+- **Docker Desktop** — running. Supabase uses it under the hood.
+- **Node 20+** and **pnpm** (`pnpm --version`).
+- **Supabase CLI** (`supabase --version`).
+  - macOS/Linux: `brew install supabase/tap/supabase`
+  - Windows: Scoop (`scoop install supabase`) or download the binary from <https://github.com/supabase/cli/releases> (the `_windows_amd64.tar.gz` asset — extract to a folder on PATH). **Do not** `npm i -g supabase` — the npm package refuses to install globally.
+- **LM Studio** (optional, for local AI): start its server on `:1234` with an instruct model loaded. Otherwise put a real `OPENAI_API_KEY` in `supabase/functions/.env`.
+
+### First time only
 
 ```bash
 pnpm install
+
+# App env (URL + anon key). Defaults in .env.example work for local Supabase.
+cp .env.example .env
+
+# Edge function secrets (OpenAI). Create this file — it's gitignored.
+cat > supabase/functions/.env <<'EOF'
+OPENAI_API_KEY=lm-studio
+OPENAI_BASE_URL=http://host.docker.internal:1234/v1
+AI_MODEL=qwen2.5-14b-instruct-1m
+EOF
 ```
 
-Every time:
+### Every time
 
 ```bash
 supabase start             # ~10s once images are cached; first run pulls from public.ecr.aws
-pnpm dev                   # :3000, ready in ~1s
+pnpm dev                   # :3000 with Turbopack, ready in ~1s
 ```
 
 Verify:
@@ -88,13 +105,24 @@ Migrations live in `supabase/migrations/*.sql` and are applied automatically on 
 - Inspect / edit data by hand: open Studio at http://127.0.0.1:54323.
 - Connect psql directly: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
 
-The app does NOT use Drizzle or a separate ORM. It reads/writes via the Supabase JS client ([lib/supabase/client.ts](lib/supabase/client.ts) / [lib/supabase/server.ts](lib/supabase/server.ts)) using PostgREST auto-generated endpoints. Types live in [lib/supabase/types.ts](lib/supabase/types.ts) and are hand-maintained.
+The app does NOT use Drizzle or a separate ORM. It reads/writes via the Supabase JS client ([lib/supabase/client.ts](lib/supabase/client.ts) / [lib/supabase/server.ts](lib/supabase/server.ts)) using PostgREST auto-generated endpoints. Types live in [lib/supabase/types.ts](lib/supabase/types.ts) and are auto-generated from the live schema.
 
-If you change the schema, also update `lib/supabase/types.ts`. Or regenerate from the live DB:
+Regenerate after every schema change:
 
 ```bash
 supabase gen types typescript --local > lib/supabase/types.ts
 ```
+
+**Two gotchas with that file** (the CLI output on Windows isn't fully clean):
+
+1. The first line may contain a `Connecting to db 5432` status message — delete it so the file starts with `export type Json =`.
+2. The generator may omit the `__InternalSupabase` marker that `@supabase/supabase-js` 2.100+ expects. If `pnpm typecheck` complains that tables resolve to `never`, add this at the top of the `Database` type:
+   ```ts
+   export type Database = {
+     __InternalSupabase: { PostgrestVersion: "12" }
+     // ...rest of generator output
+   }
+   ```
 
 ## Working with edge functions
 
@@ -124,6 +152,27 @@ Newly added functions require `supabase stop && supabase start` — the edge-run
 | `supabase/functions/.env` | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `AI_MODEL` | Read by edge functions only |
 
 The anon and service-role keys for local Supabase are deterministic — `supabase status` prints them. Never commit the service-role key to a remote repo; the local one is public and safe to paste into example files.
+
+## Adding a feature
+
+Quick cookbook for typical tasks a new contributor will hit:
+
+**Add a page to the authenticated app.** Create `app/(app)/<path>/page.tsx`. It will inherit the `(app)` group layout (auth check + sidebar). Server Component by default — use `createClient()` from [lib/supabase/server.ts](lib/supabase/server.ts) to query Supabase. RLS scopes rows to the current user automatically.
+
+**Add a client-side interaction** (form, button with state, dropdown). Create a sibling component with `"use client"` at the top and import it into the Server Component page. Use `createClient()` from [lib/supabase/client.ts](lib/supabase/client.ts) for mutations.
+
+**Add a column / table.**
+1. `supabase migration new <name>`
+2. Edit the generated SQL file. Every new table should `enable row level security` and have policies scoped to `auth.uid()` (see the existing auth migration for the pattern). Rows owned by a user should have `user_id uuid not null default auth.uid() references auth.users on delete cascade`.
+3. `supabase db reset` to reapply migrations locally.
+4. `supabase gen types typescript --local > lib/supabase/types.ts`, then fix the two gotchas above.
+5. Restart `pnpm dev` so TypeScript picks up the new types.
+
+**Add an edge function.** `supabase functions new <name>`, edit `supabase/functions/<name>/index.ts`. Use `createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: req.headers.get("Authorization")! } } })` so RLS applies inside Deno. Then `supabase stop && supabase start` (new functions aren't picked up by hot reload, only existing ones). Call from the client with `supabase.functions.invoke("<name>", { body: {...} })` — the browser client attaches the user's JWT automatically.
+
+**Add a page outside auth.** Put it under `app/(auth)/` (styled with the centered card layout) or at `app/<path>/` and update [lib/supabase/middleware.ts](lib/supabase/middleware.ts) `PUBLIC_PREFIXES` so the middleware lets unauthenticated traffic through.
+
+**Change the dashboard sidebar.** Edit `navItems` in [components/app-shell.tsx](components/app-shell.tsx).
 
 ## Common issues
 

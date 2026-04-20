@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { LogOut, User } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,10 +13,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { createClient } from "@/lib/supabase/client";
 
 export function UserMenu({ displayName, email }: { displayName: string | null; email: string }) {
+  const router = useRouter();
+  const [signingOut, setSigningOut] = React.useState(false);
   const name = displayName ?? email;
   const initial = (displayName ?? email).trim().charAt(0).toUpperCase();
+
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Sign out failed", { description: error.message });
+      setSigningOut(false);
+      return;
+    }
+    router.replace("/login");
+    router.refresh();
+  }
 
   return (
     <DropdownMenu>
@@ -37,16 +56,17 @@ export function UserMenu({ displayName, email }: { displayName: string | null; e
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <form action="/auth/signout" method="POST">
-          <button type="submit" className="w-full">
-            <DropdownMenuItem className="cursor-pointer" asChild>
-              <span className="flex w-full items-center gap-2">
-                <LogOut className="h-4 w-4" />
-                Sign out
-              </span>
-            </DropdownMenuItem>
-          </button>
-        </form>
+        <DropdownMenuItem
+          className="cursor-pointer"
+          disabled={signingOut}
+          onSelect={(e) => {
+            e.preventDefault();
+            handleSignOut();
+          }}
+        >
+          <LogOut className="h-4 w-4" />
+          {signingOut ? "Signing out..." : "Sign out"}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
