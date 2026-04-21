@@ -20,6 +20,10 @@
 
 ## Ideas
 
+Would be cool to have a feature where a user could talk to their own AI with the info provided. I am not talking about an API key (that more for advanced users). I can only think of an easy export of the data as mk or json file ... that they can drop into their AI. 
+
+Need a way to limit chat with AI because thats costly. Also would be better to have a good model to interact with. (maybe for now just have a easy export where they can drop the file into AI or maybe if our software creates a url and then give them a prompt to paste into their ai)
+
 ## Questions
 
 - Where do expected/reference ranges come from? Today: AI extracts them from each PDF (prompt tells model to leave null if missing). If we want profile-tailored ranges (age/sex/weight-aware), we need either a ranges dataset or a second AI call grounded on profile + marker.
