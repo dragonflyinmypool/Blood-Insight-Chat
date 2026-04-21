@@ -4,14 +4,19 @@
 
 ## Next
 
-- [ ] Background upload — don't block the dialog while PDF is being processed
-- [ ] Duplicate-upload UX — backend already returns 409 on duplicate hash; make sure the UI surfaces that message clearly to the user
+- [ ] Upload multiple files at once
+- [ ] Background upload — don't block the dialog while PDF is being processed (dialog auto closes when pdf is added and says pdf being uploadedd). Then user can navigate and do what they want. Next pannel show "PDF/s being uploaded" ...once complete "PDF Upload success" etc (change wording, add detail but this is the basic idea)
 - [ ] Manual corrections — edit extracted results after upload
-- [ ] Personal profile — age, sex, weight, etc. to tailor expected ranges
+
+
+## Later (details needs to be hashed out)
+
+- Duplicate-upload UX — backend already returns 409 on duplicate hash; make sure the UI surfaces that message clearly to the user
+- Personal profile — age, sex, weight, etc. to tailor expected ranges
+
+- [ ] Should be a seperate DB table with a list of tests and their description, expected range by age range and sex. Each time a new type of blood test is added by the user, a value gets added to this BD and its gets the ranges from AI and stores them in the DB.  The test description should be very easy for the user to understand and we will add it to the UI.
 - [ ] Profile-tailored expected ranges — age/sex/weight-aware ranges (either LOINC-ish dataset or a per-marker AI call grounded on profile)
 - [ ] Key markers — improve selection logic (canonical list, abnormal-first, or user-pinned — currently ranked by frequency)
-
-## Later
 
 ## Ideas
 
