@@ -16,8 +16,8 @@ on:
         required: true
         type: choice
         options:
-          - staging
-          - production
+          - dev
+          - prod
 
 concurrency:
   group: deploy-${{ github.event.inputs.environment }}
