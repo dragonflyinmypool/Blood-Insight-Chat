@@ -1,5 +1,8 @@
 # Blood Insight Chat
 
+[![Build Image](https://github.com/dragonflyinmypool/Blood-Insight-Chat/actions/workflows/build-image.yml/badge.svg)](https://github.com/dragonflyinmypool/Blood-Insight-Chat/actions/workflows/build-image.yml)
+[![Deploy](https://github.com/dragonflyinmypool/Blood-Insight-Chat/actions/workflows/deploy.yml/badge.svg)](https://github.com/dragonflyinmypool/Blood-Insight-Chat/actions/workflows/deploy.yml)
+
 Web app to upload blood test PDFs, automatically extract biomarkers, track them over time, and chat with an AI about your results.
 
 ## Architecture
