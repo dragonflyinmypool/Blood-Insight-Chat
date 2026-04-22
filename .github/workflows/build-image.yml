@@ -67,7 +67,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=sha,format=long,prefix=sha-
+            type=sha,format=long,prefix={{date 'YYYYMMDD-HHmmss'}}-sha-
             type=ref,event=branch
             type=ref,event=pr
             type=raw,value=latest,enable={{is_default_branch}}
@@ -92,9 +92,11 @@ jobs:
             NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-dummy-anon-key
 
       - name: Summary
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          REPO_LC=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE="ghcr.io/$REPO_LC:sha-${{ github.sha }}"
+          # Grab the date-and-sha tag that metadata-action produced.
+          IMAGE=$(echo "$TAGS" | grep -- '-sha-' | head -1)
           {
             echo "## Image"
             echo ""
