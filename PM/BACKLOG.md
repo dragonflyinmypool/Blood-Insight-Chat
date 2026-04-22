@@ -20,9 +20,8 @@
 
 ## Ideas
 
-Would be cool to have a feature where a user could talk to their own AI with the info provided. I am not talking about an API key (that more for advanced users). I can only think of an easy export of the data as mk or json file ... that they can drop into their AI. 
-
-Need a way to limit chat with AI because thats costly. Also would be better to have a good model to interact with. (maybe for now just have a easy export where they can drop the file into AI or maybe if our software creates a url and then give them a prompt to paste into their ai)
+- BYO-AI export — let users take their results to their own AI (ChatGPT, Claude, etc.) instead of paying for in-app chat. Leaning toward clipboard-paste markdown over the short-lived URL approach. Full notes: [ideas/byo-ai-export.md](ideas/byo-ai-export.md)
+- Limit in-app chat cost — costly and abusable; BYO-AI export above is one answer, but may also need rate limits / tier gating if in-app chat stays.
 
 ## Questions
 
