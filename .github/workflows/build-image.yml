@@ -67,7 +67,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=sha,format=long,prefix={{date 'YYYYMMDD-HHmmss'}}-sha-
+            type=sha,format=long,prefix={{date 'DD-MM-YYYY-HHmmss'}}-sha-
             type=ref,event=branch
             type=ref,event=pr
             type=raw,value=latest,enable={{is_default_branch}}
