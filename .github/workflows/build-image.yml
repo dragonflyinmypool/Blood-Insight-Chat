@@ -93,7 +93,14 @@ jobs:
 
       - name: Summary
         run: |
-          echo "### Published image" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          REPO_LC=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="ghcr.io/$REPO_LC:sha-${{ github.sha }}"
+          {
+            echo "## Image"
+            echo ""
+            echo '```'
+            echo "$IMAGE"
+            echo '```'
+            echo ""
+            echo "Paste this into the Deploy workflow's \`image\` input."
+          } >> "$GITHUB_STEP_SUMMARY"
