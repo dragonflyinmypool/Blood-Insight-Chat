@@ -1,0 +1,74 @@
+name: Deploy
+
+# Manual trigger only. Pick an image that CI already built + pushed to GHCR,
+# and a target environment. GitHub Environments let you attach per-env
+# secrets (DB URLs, API keys) and required reviewers.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "Image ref to deploy (e.g. ghcr.io/owner/repo:sha-abc123 or :latest)"
+        required: true
+        default: "ghcr.io/${{ github.repository }}:latest"
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Log inputs
+        run: |
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Image:       ${{ github.event.inputs.image }}"
+
+      # TODO: replace this block with the actual deploy command for your target.
+      #
+      # Fly.io:
+      #   - uses: superfly/flyctl-actions/setup-flyctl@master
+      #   - run: flyctl deploy --image ${{ inputs.image }} --app <app-name>
+      #     env: { FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }} }
+      #
+      # Railway:
+      #   - uses: bervProject/railway-deploy@main
+      #     with: { service: <id>, token: ${{ secrets.RAILWAY_TOKEN }} }
+      #
+      # VPS via SSH:
+      #   - uses: appleboy/ssh-action@v1
+      #     with:
+      #       host: ${{ secrets.SSH_HOST }}
+      #       username: ${{ secrets.SSH_USER }}
+      #       key: ${{ secrets.SSH_KEY }}
+      #       script: |
+      #         docker pull ${{ inputs.image }}
+      #         docker stop app || true && docker rm app || true
+      #         docker run -d --name app -p 3000:3000 \
+      #           --env-file /etc/blood-insight/.env \
+      #           ${{ inputs.image }}
+      #
+      # Cloud Run:
+      #   - uses: google-github-actions/auth@v2
+      #     with: { credentials_json: ${{ secrets.GCP_SA_KEY }} }
+      #   - uses: google-github-actions/deploy-cloudrun@v2
+      #     with:
+      #       service: blood-insight
+      #       image: ${{ inputs.image }}
+      #       region: us-central1
+      - name: TODO deploy step
+        run: |
+          echo "::warning::Deploy step is not implemented yet — this workflow is a scaffold."
+          echo "Would deploy image ${{ github.event.inputs.image }} to ${{ github.event.inputs.environment }}."
