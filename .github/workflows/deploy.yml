@@ -10,7 +10,7 @@ on:
       image:
         description: "Image ref to deploy (e.g. ghcr.io/owner/repo:sha-abc123 or :latest)"
         required: true
-        default: "ghcr.io/${{ github.repository }}:latest"
+        default: "ghcr.io/dragonflyinmypool/blood-insight-chat:latest"
       environment:
         description: "Target environment"
         required: true
