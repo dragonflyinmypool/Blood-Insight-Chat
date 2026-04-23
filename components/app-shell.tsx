@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, FlaskConical, LineChart, MessageCircle } from "lucide-react";
+import { Activity, FileText, FlaskConical, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/user-menu";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: Activity },
-  { href: "/tests", label: "Blood Tests", icon: FlaskConical },
-  { href: "/markers", label: "Markers", icon: LineChart },
+  { href: "/results", label: "Results", icon: FlaskConical },
+  { href: "/tests", label: "Tests", icon: FileText },
   { href: "/chat", label: "AI Chat", icon: MessageCircle },
 ];
 

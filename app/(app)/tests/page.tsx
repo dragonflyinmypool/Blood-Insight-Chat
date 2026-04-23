@@ -7,15 +7,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { UploadDialog } from "@/components/upload-dialog";
 import { TestRowActions } from "./row-actions";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/current-user";
 
 export const dynamic = "force-dynamic";
 
 export default async function TestsPage() {
   const supabase = await createClient();
+  const user = await getCurrentUser();
 
   const { data: tests } = await supabase
     .from("blood_tests")
-    .select("id, file_name, test_date, lab_name, patient_name, created_at")
+    .select("id, file_name, test_date, lab_name, patient_name, content_hash, created_at")
     .order("created_at", { ascending: false });
 
   const withCounts = await Promise.all(
@@ -32,8 +34,8 @@ export default async function TestsPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Blood tests</h1>
-          <p className="text-sm text-muted-foreground">All uploaded tests, newest first.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Tests</h1>
+          <p className="text-sm text-muted-foreground">All uploaded blood tests, newest first.</p>
         </div>
         <UploadDialog>
           <Button>
@@ -74,7 +76,7 @@ export default async function TestsPage() {
                   <TableCell className="text-sm">{t.lab_name ?? "—"}</TableCell>
                   <TableCell className="text-right text-sm">{t.resultCount}</TableCell>
                   <TableCell className="text-right">
-                    <TestRowActions id={t.id} />
+                    <TestRowActions id={t.id} userId={user!.id} contentHash={t.content_hash} />
                   </TableCell>
                 </TableRow>
               ))}
