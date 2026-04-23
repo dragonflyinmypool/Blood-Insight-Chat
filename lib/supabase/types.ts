@@ -7,9 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  __InternalSupabase: {
-    PostgrestVersion: "12"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -40,6 +37,7 @@ export type Database = {
       blood_test_results: {
         Row: {
           blood_test_id: number
+          category: string | null
           id: number
           marker_name: string
           raw_text: string | null
@@ -51,6 +49,7 @@ export type Database = {
         }
         Insert: {
           blood_test_id: number
+          category?: string | null
           id?: number
           marker_name: string
           raw_text?: string | null
@@ -62,6 +61,7 @@ export type Database = {
         }
         Update: {
           blood_test_id?: number
+          category?: string | null
           id?: number
           marker_name?: string
           raw_text?: string | null
@@ -181,6 +181,45 @@ export type Database = {
           },
         ]
       }
+      markers: {
+        Row: {
+          aliases: string[]
+          canonical_name: string
+          category: string
+          created_at: string
+          id: number
+          ref_high: number | null
+          ref_low: number | null
+          ref_note: string | null
+          ref_unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          aliases?: string[]
+          canonical_name: string
+          category: string
+          created_at?: string
+          id?: number
+          ref_high?: number | null
+          ref_low?: number | null
+          ref_note?: string | null
+          ref_unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aliases?: string[]
+          canonical_name?: string
+          category?: string
+          created_at?: string
+          id?: number
+          ref_high?: number | null
+          ref_low?: number | null
+          ref_note?: string | null
+          ref_unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -217,6 +256,17 @@ export type Database = {
           latest_test_date: string
           total_markers: number
           total_tests: number
+        }[]
+      }
+      categorize_markers: {
+        Args: { names: string[] }
+        Returns: {
+          canonical_name: string
+          category: string
+          input_name: string
+          ref_high: number
+          ref_low: number
+          ref_unit: string
         }[]
       }
       marker_list: {
