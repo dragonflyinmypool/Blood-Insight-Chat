@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, FileText, FlaskConical, MessageCircle } from "lucide-react";
+import { Activity, FileText, FlaskConical, MessageCircle, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/user-menu";
+import { UploadIndicator } from "@/components/upload-indicator";
 
 const navItems = [
   { href: "/results", label: "Results", icon: FlaskConical },
   { href: "/tests", label: "Tests", icon: FileText },
+  { href: "/about-me", label: "About me", icon: UserRound },
   { href: "/chat", label: "AI Chat", icon: MessageCircle },
 ];
 
@@ -53,7 +55,8 @@ export function AppShell({
             );
           })}
         </nav>
-        <div className="border-t p-2">
+        <div className="space-y-2 border-t p-2">
+          <UploadIndicator />
           <UserMenu displayName={displayName} email={email} />
         </div>
       </aside>

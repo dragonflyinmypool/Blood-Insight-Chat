@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { FileUp, File as FileIcon, X, Loader2 } from "lucide-react";
+import { FileUp, File as FileIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,64 +14,55 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { useUploadQueue } from "@/components/upload-queue-provider";
+
+const MAX_SIZE = 10 * 1024 * 1024;
 
 export function UploadDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
-  const [file, setFile] = React.useState<File | null>(null);
+  const [files, setFiles] = React.useState<File[]>([]);
   const [notes, setNotes] = React.useState("");
-  const [uploading, setUploading] = React.useState(false);
   const fileInput = React.useRef<HTMLInputElement>(null);
-  const router = useRouter();
+  const { enqueue } = useUploadQueue();
 
-  function pickFile(f: File | null) {
-    if (!f) return;
-    if (f.type !== "application/pdf") {
-      toast.error("Invalid file type", { description: "Please select a PDF." });
-      return;
+  function pickFiles(list: FileList | null) {
+    if (!list || list.length === 0) return;
+    const accepted: File[] = [];
+    for (const f of Array.from(list)) {
+      if (f.type !== "application/pdf") {
+        toast.error(`Skipped ${f.name}`, { description: "Only PDF files are supported." });
+        continue;
+      }
+      if (f.size > MAX_SIZE) {
+        toast.error(`Skipped ${f.name}`, { description: "Maximum file size is 10MB." });
+        continue;
+      }
+      accepted.push(f);
     }
-    if (f.size > 10 * 1024 * 1024) {
-      toast.error("File too large", { description: "Maximum file size is 10MB." });
-      return;
+    if (accepted.length > 0) {
+      // Dedupe by name+size so accidental double-picks don't get queued twice.
+      setFiles((curr) => {
+        const seen = new Set(curr.map((f) => `${f.name}:${f.size}`));
+        return [...curr, ...accepted.filter((f) => !seen.has(`${f.name}:${f.size}`))];
+      });
     }
-    setFile(f);
   }
 
-  async function handleUpload() {
-    if (!file) return;
-    setUploading(true);
-    try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve((reader.result as string).split(",")[1] ?? "");
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
+  function removeAt(idx: number) {
+    setFiles((curr) => curr.filter((_, i) => i !== idx));
+  }
 
-      const supabase = createClient();
-      const { data, error } = await supabase.functions.invoke("upload-blood-test", {
-        body: { fileName: file.name, pdfBase64: base64, notes: notes.trim() || undefined },
-      });
-
-      if (error) {
-        // Supabase invoke wraps non-2xx as FunctionsHttpError; message has body.error
-        const status = (error as { context?: { status?: number } }).context?.status;
-        const msg = (data as { error?: string } | null)?.error ?? error.message;
-        toast.error(status === 409 ? "Already uploaded" : "Upload failed", { description: msg });
-        setUploading(false);
-        return;
-      }
-
-      toast.success("Upload successful", { description: "Your blood test results have been extracted." });
-      setOpen(false);
-      setFile(null);
-      setNotes("");
-      router.refresh();
-    } catch (err) {
-      toast.error("Upload failed", { description: (err as Error).message });
-    } finally {
-      setUploading(false);
-    }
+  function handleSubmit() {
+    if (files.length === 0) return;
+    enqueue(files.map((file) => ({ file, notes })));
+    toast.info(
+      files.length === 1 ? "Upload started" : `${files.length} uploads queued`,
+      { description: "You can navigate away — we'll notify you as each one finishes." }
+    );
+    setFiles([]);
+    setNotes("");
+    if (fileInput.current) fileInput.current.value = "";
+    setOpen(false);
   }
 
   return (
@@ -80,57 +70,69 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload Blood Test</DialogTitle>
+          <DialogTitle>Upload Blood Tests</DialogTitle>
           <DialogDescription>
-            Upload a PDF of your lab results. We&apos;ll automatically extract the biomarkers and reference ranges.
+            Upload one or more PDFs. We&apos;ll extract biomarkers in the background so you can
+            keep using the app.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
           <div
             className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 p-6 transition-colors hover:bg-muted/80"
-            onClick={() => !file && fileInput.current?.click()}
+            onClick={() => fileInput.current?.click()}
             role="button"
           >
             <input
               ref={fileInput}
               type="file"
               accept=".pdf,application/pdf"
+              multiple
               className="hidden"
-              disabled={uploading}
-              onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                pickFiles(e.target.files);
+                // Allow picking the same file again after removing it.
+                e.target.value = "";
+              }}
             />
-            {file ? (
-              <div className="flex w-full items-center gap-3 rounded-md border bg-background p-3">
-                <FileIcon className="h-8 w-8 text-primary" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0 text-muted-foreground hover:text-destructive"
-                  disabled={uploading}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFile(null);
-                    if (fileInput.current) fileInput.current.value = "";
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+            <div className="text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <FileUp className="h-6 w-6 text-primary" />
               </div>
-            ) : (
-              <div className="text-center">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                  <FileUp className="h-6 w-6 text-primary" />
-                </div>
-                <p className="text-sm font-medium">Click to select PDF</p>
-                <p className="mt-1 text-xs text-muted-foreground">Maximum 10MB</p>
-              </div>
-            )}
+              <p className="text-sm font-medium">Click to select PDFs</p>
+              <p className="mt-1 text-xs text-muted-foreground">One or many. Max 10MB each.</p>
+            </div>
           </div>
+
+          {files.length > 0 && (
+            <ul className="space-y-2">
+              {files.map((f, idx) => (
+                <li
+                  key={`${f.name}:${f.size}:${idx}`}
+                  className="flex items-center gap-3 rounded-md border bg-background p-2"
+                >
+                  <FileIcon className="h-5 w-5 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{f.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(f.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeAt(idx);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
 
           <div className="grid gap-2">
             <Label htmlFor="notes">Notes (optional)</Label>
@@ -139,24 +141,25 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
               placeholder="Fasting status, time of day, how you were feeling..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              disabled={uploading}
             />
+            {files.length > 1 && (
+              <p className="text-xs text-muted-foreground">
+                Applied to all {files.length} uploads.
+              </p>
+            )}
           </div>
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={uploading}>
+          <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={handleUpload} disabled={!file || uploading}>
-            {uploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              "Upload and extract"
-            )}
+          <Button onClick={handleSubmit} disabled={files.length === 0}>
+            {files.length === 0
+              ? "Upload"
+              : files.length === 1
+                ? "Upload 1 file"
+                : `Upload ${files.length} files`}
           </Button>
         </div>
       </DialogContent>
