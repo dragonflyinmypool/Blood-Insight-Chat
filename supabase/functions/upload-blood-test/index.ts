@@ -328,6 +328,7 @@ Deno.serve(async (req) => {
   // our own: labs print wildly inconsistent/wrong ranges, so we trust ours
   // and recompute status accordingly.
   type MarkerRef = {
+    marker_id?: number | null;
     category?: string;
     canonical_name?: string;
     ref_low?: number | null;
@@ -340,6 +341,7 @@ Deno.serve(async (req) => {
     const { data: mapping } = await supabase.rpc("categorize_markers", { names });
     for (const row of mapping ?? []) {
       refByName.set(row.input_name.toLowerCase(), {
+        marker_id: row.marker_id ?? null,
         category: row.category ?? undefined,
         canonical_name: row.canonical_name ?? undefined,
         ref_low: row.ref_low,
@@ -390,6 +392,7 @@ Deno.serve(async (req) => {
 
     return {
       blood_test_id: inserted.id,
+      marker_id: ref?.marker_id ?? null,
       marker_name: canonicalName,
       value: r.value ?? null,
       unit: r.unit ?? null,

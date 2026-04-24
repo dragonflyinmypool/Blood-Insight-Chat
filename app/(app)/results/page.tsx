@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { format } from "date-fns";
 import { Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -92,8 +93,6 @@ export default async function ResultsPage() {
     readings: countByMarker.get(key) ?? 1,
   }));
 
-  const totalAbnormal = latest.filter((m) => isAbnormal(m.status)).length;
-
   if (latest.length === 0) {
     return (
       <div className="mx-auto max-w-5xl space-y-6">
@@ -148,21 +147,6 @@ export default async function ResultsPage() {
         </UploadDialog>
       </div>
 
-      <Card>
-        <CardContent className="flex flex-wrap items-baseline gap-x-6 gap-y-2 py-4 text-sm">
-          <span>
-            <span className="font-semibold">{latest.length}</span> markers tracked
-          </span>
-          <span>
-            <span className="font-semibold">{groups.length}</span>{" "}
-            {groups.length === 1 ? "category" : "categories"}
-          </span>
-          <span className={totalAbnormal > 0 ? "text-destructive" : "text-muted-foreground"}>
-            <span className="font-semibold">{totalAbnormal}</span> currently abnormal
-          </span>
-        </CardContent>
-      </Card>
-
       {groups.map(([cat, catMarkers]) => {
         const meta = categoryMeta(cat);
         const abnormal = catMarkers.filter((m) => isAbnormal(m.status)).length;
@@ -207,7 +191,14 @@ export default async function ResultsPage() {
                 <TableBody>
                   {sorted.map((m) => (
                     <TableRow key={m.id}>
-                      <TableCell className="font-medium">{m.marker_name}</TableCell>
+                      <TableCell className="font-medium">
+                        <Link
+                          href={`/results/${encodeURIComponent(m.marker_name.trim().toLowerCase())}`}
+                          className="hover:underline"
+                        >
+                          {m.marker_name}
+                        </Link>
+                      </TableCell>
                       <TableCell className="text-right font-mono text-sm">
                         {m.value ?? "—"} {m.unit ?? ""}
                       </TableCell>
