@@ -55,20 +55,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Signed-in user hasn't finished onboarding yet → force them through it.
-  if (user && pathname !== "/onboarding" && !pathname.startsWith("/auth")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarded")
-      .eq("id", user.id)
-      .maybeSingle<{ onboarded: boolean }>();
-
-    if (profile && !profile.onboarded) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
-    }
-  }
-
   return response;
 }

@@ -6,10 +6,9 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
   const [user, profile] = await Promise.all([getCurrentUser(), getCurrentProfile()]);
 
   if (!user) redirect("/login");
-  if (!profile?.onboarded) redirect("/onboarding");
 
   return (
-    <AppShell displayName={profile.display_name} email={user.email ?? ""}>
+    <AppShell displayName={profile?.display_name ?? null} email={user.email ?? ""}>
       {children}
     </AppShell>
   );
