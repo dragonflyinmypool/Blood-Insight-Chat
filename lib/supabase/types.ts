@@ -7,6 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
+  __InternalSupabase: { PostgrestVersion: "12" }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -39,6 +40,7 @@ export type Database = {
           blood_test_id: number
           category: string | null
           id: number
+          marker_id: number | null
           marker_name: string
           raw_text: string | null
           reference_range_high: number | null
@@ -51,6 +53,7 @@ export type Database = {
           blood_test_id: number
           category?: string | null
           id?: number
+          marker_id?: number | null
           marker_name: string
           raw_text?: string | null
           reference_range_high?: number | null
@@ -63,6 +66,7 @@ export type Database = {
           blood_test_id?: number
           category?: string | null
           id?: number
+          marker_id?: number | null
           marker_name?: string
           raw_text?: string | null
           reference_range_high?: number | null
@@ -77,6 +81,13 @@ export type Database = {
             columns: ["blood_test_id"]
             isOneToOne: false
             referencedRelation: "blood_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blood_test_results_marker_id_fkey"
+            columns: ["marker_id"]
+            isOneToOne: false
+            referencedRelation: "markers"
             referencedColumns: ["id"]
           },
         ]
@@ -223,23 +234,32 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
           id: string
+          notes: string | null
           onboarded: boolean
+          sex: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           id: string
+          notes?: string | null
           onboarded?: boolean
+          sex?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           id?: string
+          notes?: string | null
           onboarded?: boolean
+          sex?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -264,6 +284,7 @@ export type Database = {
           canonical_name: string
           category: string
           input_name: string
+          marker_id: number
           ref_high: number
           ref_low: number
           ref_unit: string
@@ -276,6 +297,7 @@ export type Database = {
           usage_count: number
         }[]
       }
+      marker_normalize: { Args: { name: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
