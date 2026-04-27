@@ -23,6 +23,7 @@ First-time setup, env layout, troubleshooting, migration workflow, and "how to a
 - **[local-dev-setup](.claude/skills/local-dev-setup/SKILL.md)** — running/stopping/resetting the stack, env vars, migrations, edge functions, type regeneration, port map, common errors. Load for anything dev-env or tooling related.
 - **[blood-insight-context](.claude/skills/blood-insight-context/SKILL.md)** — product flow, domain concepts (biomarker, reference range, status, dedup), non-obvious business rules, schema map, where the extraction and chat prompts live. Load before touching uploads, biomarkers, chat, or the schema.
 - **[commit](.claude/skills/commit/SKILL.md)** — secret-screened, user-attributed commits (no Claude Co-Authored-By trailers, no `git add -A`, no amending). Load whenever the user asks for a commit.
+- **[provision-supabase-env](.claude/skills/provision-supabase-env/SKILL.md)** — bring up a brand-new hosted Supabase project (dev/staging/prod): push schema, deploy edge functions, set secrets, configure auth, wire up `.env` and GitHub Secrets. Load when adding a new environment.
 
 ## Load-bearing facts to keep in mind
 
