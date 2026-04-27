@@ -56,18 +56,22 @@ The lab controls reminder frequency, messaging tone, and which triggers are acti
 ## Pricing Model
 
 ### Setup Fee
-One-time onboarding fee covering white-label configuration, LIMS integration, and staff training.
+
+| Integration Type | Fee |
+|---|---|
+| PDF upload only | $500 |
+| LIMS integration | $2,500 – $5,000 (varies by vendor) |
 
 ### Monthly SaaS Subscription (Tiered by Active Patients)
 
-| Tier | Active Patients / Month | Price (est.) |
+| Tier | Active Patients / Month | Price |
 |---|---|---|
-| Starter | Up to 500 | TBD |
-| Growth | 501 – 2,000 | TBD |
-| Scale | 2,001 – 10,000 | TBD |
-| Enterprise | 10,000+ | Custom |
+| Starter | Up to 300 | $149 / mo |
+| Growth | 301 – 1,500 | $399 / mo |
+| Scale | 1,501 – 5,000 | $799 / mo |
+| Enterprise | 5,000+ | Custom (~$1,500+) |
 
-Pricing per tier to be validated through sales conversations. Volume discounts and annual billing discounts are options to explore.
+Annual billing: 2 months free (~15% discount). All tiers include white labeling and email reminders.
 
 ---
 
@@ -80,11 +84,21 @@ Pricing per tier to be validated through sales conversations. Volume discounts a
 
 ---
 
-## Open Questions / To Decide
+## Next Steps
 
-- [ ] Exact pricing per tier
-- [ ] Setup fee amount (flat vs. based on integration complexity)
-- [ ] Which LIMS vendors to prioritize for first integrations
-- [ ] Whether to offer a patient-facing free tier or keep it purely B2B
-- [ ] Reminder email sending infrastructure (Resend, SendGrid, etc.)
-- [ ] Data residency / HIPAA BAA requirements per lab
+1. Pull mid-size independent lab list from CMS CLIA database
+2. Define target region for initial outreach cohort (~50 labs)
+3. Build white-labeled demo environment
+4. Reach out to first 10 labs — aim for 1–2 paid pilots
+
+---
+
+## Open Questions
+
+- HIPAA BAA + data ownership agreement per lab
+- Patient consent flow
+- Which LIMS vendors to integrate first
+- Who handles LIMS integration work (us vs. contractor)
+- Sales cycle owner — who closes the deal?
+- Competitive landscape — what do labs already use?
+- Breakeven model — how many labs needed at each tier?
