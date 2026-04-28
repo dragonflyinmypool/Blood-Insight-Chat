@@ -1,0 +1,23 @@
+/**
+ * Cloudflare Worker config for the OpenNext-built Next.js app.
+ * Docs: https://opennext.js.org/cloudflare
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "blood-insight-chat",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Required: next-themes stringifies a script that references esbuild's
+  // `__name` helper. With keep_names enabled (the default), the helper
+  // is referenced in the string but not in scope at runtime, causing
+  // "__name is not defined". https://opennext.js.org/cloudflare/howtos/keep_names
+  "keep_names": false,
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

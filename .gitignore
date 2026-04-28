@@ -34,3 +34,9 @@ coverage
 .cache
 .turbo
 .pnpm-store
+
+# OpenNext / Cloudflare Workers
+.open-next
+.wrangler
+cloudflare-env.d.ts
+.dev.vars
