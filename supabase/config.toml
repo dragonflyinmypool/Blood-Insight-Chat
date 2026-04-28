@@ -404,7 +404,10 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.upload-blood-test]
 enabled = true
-verify_jwt = true
+# Gateway-level JWT check is off so CORS preflight (OPTIONS, no auth header)
+# passes through. The function itself reads `Authorization` and calls
+# `supabase.auth.getUser()` — auth is enforced one layer deeper.
+verify_jwt = false
 import_map = "./functions/upload-blood-test/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -415,7 +418,8 @@ entrypoint = "./functions/upload-blood-test/index.ts"
 
 [functions.chat-send]
 enabled = true
-verify_jwt = true
+# See note on upload-blood-test above — auth is enforced inside the function.
+verify_jwt = false
 import_map = "./functions/chat-send/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx

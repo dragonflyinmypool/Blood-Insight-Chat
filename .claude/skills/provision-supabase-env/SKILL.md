@@ -7,6 +7,18 @@ description: Provision a new hosted Supabase project (dev / staging / prod) and 
 
 End-to-end recipe for taking a brand-new Supabase project from empty to "the app works against it." Each environment (dev, staging, prod) is a separate Supabase project — they don't share a database. Repeat this whole flow per env.
 
+## TL;DR — minimum to make the app actually work
+
+Skip any of these and the app *looks* deployed but breaks the moment a user tries to do something:
+
+- [ ] **Step 1:** schema pushed (`supabase db push`) — without this, login/signup throws on missing tables.
+- [ ] **Step 2:** **edge functions deployed** (`upload-blood-test`, `chat-send`) — without this, **PDF upload fails with `Failed to send a request to the Edge Function`** and chat does nothing.
+- [ ] **Step 3:** **`OPENAI_API_KEY` (+ `OPENAI_BASE_URL`, `AI_MODEL`) set as Supabase secrets** — without this, uploads return empty extraction and chat replies are blank. Functions read these from Supabase's secrets store at runtime, **not** from any local `.env`.
+- [ ] **Step 4:** Auth Site URL / Redirect URLs match the deployed origin — without this, signup confirmation emails point at `localhost`.
+- [ ] **Step 5:** `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` set wherever the app builds (host CI **build variables**, not just runtime).
+
+Steps 2 + 3 are the ones easiest to forget because the build still succeeds without them — the failure only shows up when a user clicks "Upload PDF" in production.
+
 ## Step 0. Create the project in the dashboard
 
 User does this manually:
@@ -44,16 +56,28 @@ Local and Remote columns should match for every row. If a migration fails midway
 
 ## Step 2. Deploy edge functions
 
+> **Don't skip this — it's the #1 forgotten step.** Migrations push the schema but **not** the functions. If you skip this, the app deploys cleanly but the moment a user uploads a PDF the browser shows `Failed to send a request to the Edge Function` (because the URL `/functions/v1/upload-blood-test` 404s).
+
 ```bash
 supabase functions deploy upload-blood-test
 supabase functions deploy chat-send
 ```
 
-Check at <https://supabase.com/dashboard/project/{ref}/functions> that both appear and show "Active."
+Verify both appear and show "Active":
+
+```bash
+supabase functions list --project-ref <reference-id>
+```
+
+Or check <https://supabase.com/dashboard/project/{ref}/functions>.
 
 ## Step 3. Set edge function secrets
 
-These are the env vars the functions read at runtime — they live in Supabase, **not** in the function image. Edge functions cannot reach `host.docker.internal` on a hosted project, so LM Studio is local-dev-only — production needs a real LLM endpoint.
+> **Also easy to forget — the build doesn't need these, but the functions are useless without them.** With Step 2 done but Step 3 skipped, uploads succeed at the network level but extraction returns empty (`OPENAI_API_KEY` undefined), and chat responses come back blank.
+
+These env vars live in Supabase's secrets store, **not** in any local `.env` and **not** baked into the function code. `supabase/functions/.env` is local-dev only — it does not sync up on `functions deploy`. Edge functions also can't reach `host.docker.internal`, so LM Studio is local-only — hosted needs a real LLM endpoint.
+
+Inline:
 
 ```bash
 supabase secrets set \
@@ -62,7 +86,13 @@ supabase secrets set \
   AI_MODEL=gpt-4o-mini
 ```
 
-Verify with `supabase secrets list`. The values are masked but the names should appear.
+Or from a file (cleaner — same `.env` you'd use for `functions serve`):
+
+```bash
+supabase secrets set --env-file supabase/functions/.env
+```
+
+Verify with `supabase secrets list` — values are masked but names should appear. After changing a secret, **redeploy the function** (`supabase functions deploy <name>`) for the new value to take effect on the running instance.
 
 ## Step 4. Configure Auth in the dashboard
 
@@ -133,6 +163,10 @@ If extraction returns nothing, check `supabase functions logs upload-blood-test`
 ## Common errors
 
 **`supabase db push` fails with "schema migration history mismatch"** — you applied SQL manually in the dashboard before pushing. Use `supabase migration repair --status applied <timestamp>` to mark already-applied migrations, or `supabase db reset` if the project has no production data yet.
+
+**Browser shows "Failed to send a request to the Edge Function" on upload** — the function isn't deployed to the hosted project. `supabase db push` only applies migrations; functions need a separate `supabase functions deploy <name>` (Step 2). Verify with `supabase functions list --project-ref <ref>`.
+
+**Upload succeeds but extraction is empty / chat returns blank** — `OPENAI_API_KEY` isn't set as a hosted-project secret (Step 3), or it's set on local-dev only. Check with `supabase secrets list`. Remember to redeploy the function after changing a secret.
 
 **Edge function returns 401 from the app even after deploy** — `Authorization: Bearer <publishable-key>` is the wrong header for our functions. The client must pass the user's `session.access_token`, not the anon key. The `supabase.functions.invoke()` browser helper does this automatically; manual `fetch` does not.
 
