@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Sector P/E Ratio Comparison — May 2026</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --surface: #141720;
+      --surface2: #1c2130;
+      --border: #252c3e;
+      --text: #e8ecf4;
+      --muted: #8892a4;
+      --accent: #4f8ef7;
+
+      --chip:    #a78bfa; /* violet */
+      --bigtech: #38bdf8; /* sky */
+      --aisoft:  #34d399; /* emerald */
+      --other:   #fb923c; /* orange */
+      --neg:     #f87171; /* red — unprofitable */
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 32px 20px 60px;
+    }
+
+    .page-header {
+      max-width: 1100px;
+      margin: 0 auto 36px;
+    }
+
+    .page-header h1 {
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .page-header h1 span { color: var(--accent); }
+
+    .page-header p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 680px;
+      line-height: 1.6;
+    }
+
+    /* ── filters ── */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      max-width: 1100px;
+      margin: 0 auto 28px;
+    }
+
+    .filter-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .filter-btn.active {
+      border-color: transparent;
+      color: var(--text);
+    }
+
+    .filter-btn[data-cat="all"].active   { background: var(--accent); }
+    .filter-btn[data-cat="chip"].active  { background: var(--chip);   }
+    .filter-btn[data-cat="bigtech"].active { background: var(--bigtech); }
+    .filter-btn[data-cat="aisoft"].active  { background: var(--aisoft); }
+    .filter-btn[data-cat="other"].active   { background: var(--other);  }
+
+    .filter-btn .dot.chip    { background: var(--chip);    }
+    .filter-btn .dot.bigtech { background: var(--bigtech); }
+    .filter-btn .dot.aisoft  { background: var(--aisoft);  }
+    .filter-btn .dot.other   { background: var(--other);   }
+
+    /* ── sort controls ── */
+    .sort-bar {
+      max-width: 1100px;
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .sort-bar label { color: var(--muted); font-size: 0.82rem; }
+
+    .sort-bar select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      appearance: none;
+      padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238892a4' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+    }
+
+    /* ── main chart card ── */
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 28px 20px;
+      max-width: 1100px;
+      margin: 0 auto 28px;
+    }
+
+    .chart-wrapper {
+      position: relative;
+    }
+
+    /* ── unprofitable table ── */
+    .neg-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 28px;
+      max-width: 1100px;
+      margin: 0 auto 28px;
+    }
+
+    .neg-card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--neg);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .neg-card h2::before {
+      content: "⚠";
+      font-size: 0.9rem;
+    }
+
+    .neg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .neg-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+
+    .neg-item .ticker {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .neg-item .company-name {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 2px;
+    }
+
+    .neg-item .pe-val {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--neg);
+      font-weight: 600;
+    }
+
+    .neg-item .cat-tag {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 500;
+    }
+
+    /* ── stats strip ── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+      max-width: 1100px;
+      margin: 0 auto 28px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+
+    .stat-card .stat-label {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 6px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-card .stat-sub {
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-top: 3px;
+    }
+
+    /* ── footer / sources ── */
+    .sources {
+      max-width: 1100px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 0.77rem;
+      line-height: 1.8;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    .sources strong { color: var(--text); }
+    .sources a { color: var(--accent); text-decoration: none; }
+    .sources a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header class="page-header">
+  <h1>AI Full-Stack <span>P/E Ratio</span> Comparison</h1>
+  <p>
+    Trailing twelve-month (TTM) P/E ratios across the full AI stack — semiconductors, cloud, big tech, and AI-native software —
+    as of <strong>May 2026</strong>. Forward P/E noted where TTM is unavailable or misleading.
+    Companies with negative earnings are listed separately below.
+  </p>
+</header>
+
+<!-- stats strip -->
+<div class="stats-strip" id="statsStrip"></div>
+
+<!-- category filters -->
+<div class="filters">
+  <button class="filter-btn active" data-cat="all">All companies</button>
+  <button class="filter-btn" data-cat="chip"><span class="dot chip"></span>Semiconductors</button>
+  <button class="filter-btn" data-cat="bigtech"><span class="dot bigtech"></span>Big Tech / Cloud</button>
+  <button class="filter-btn" data-cat="aisoft"><span class="dot aisoft"></span>AI Software</button>
+  <button class="filter-btn" data-cat="other"><span class="dot other"></span>Other AI</button>
+</div>
+
+<!-- sort bar -->
+<div class="sort-bar">
+  <label for="sortSelect">Sort by:</label>
+  <select id="sortSelect">
+    <option value="desc">P/E: Highest first</option>
+    <option value="asc">P/E: Lowest first</option>
+    <option value="alpha">Company name (A–Z)</option>
+    <option value="cat">Category</option>
+  </select>
+</div>
+
+<!-- main chart -->
+<div class="chart-card">
+  <div class="chart-wrapper" id="chartWrapper">
+    <canvas id="peChart"></canvas>
+  </div>
+</div>
+
+<!-- unprofitable companies -->
+<div class="neg-card" id="negCard">
+  <h2>Unprofitable / N/A — P/E Ratio Not Meaningful</h2>
+  <div class="neg-grid" id="negGrid"></div>
+</div>
+
+<!-- sources -->
+<div class="sources">
+  <strong>Data sources (TTM P/E as of late April – May 2026):</strong><br>
+  MacroTrends &nbsp;·&nbsp; GuruFocus &nbsp;·&nbsp; CompaniesMarketCap &nbsp;·&nbsp; StockAnalysis &nbsp;·&nbsp;
+  FinanceCharts &nbsp;·&nbsp; FullRatio &nbsp;·&nbsp; Nasdaq.com &nbsp;·&nbsp; Yahoo Finance<br>
+  <em>¹ Forward P/E used where TTM is negative or not meaningful. All figures approximate and sourced from public financial data providers.</em>
+</div>
+
+<script>
+const ALL_COMPANIES = [
+  // Semiconductors / AI Chips
+  { ticker:"ARM",  name:"Arm Holdings",       pe: 317,  type:"ttm", cat:"chip",    note:"Trailing P/E TTM" },
+  { ticker:"AMD",  name:"AMD",                pe: 136,  type:"ttm", cat:"chip",    note:"Trailing P/E TTM" },
+  { ticker:"MRVL", name:"Marvell Technology", pe:  57,  type:"ttm", cat:"chip",    note:"Trailing P/E TTM" },
+  { ticker:"ASML", name:"ASML Holding",       pe:  51,  type:"ttm", cat:"chip",    note:"Trailing P/E TTM" },
+  { ticker:"NVDA", name:"NVIDIA",             pe:  41,  type:"ttm", cat:"chip",    note:"Trailing P/E TTM" },
+  { ticker:"AVGO", name:"Broadcom",           pe:  41,  type:"fwd", cat:"chip",    note:"Forward P/E¹" },
+  { ticker:"QCOM", name:"Qualcomm",           pe:  28,  type:"ttm", cat:"chip",    note:"Trailing P/E TTM" },
+  { ticker:"TSM",  name:"TSMC",               pe:  27,  type:"fwd", cat:"chip",    note:"Forward P/E¹" },
+
+  // Big Tech / Cloud
+  { ticker:"TSLA", name:"Tesla",              pe: 317,  type:"ttm", cat:"bigtech", note:"Trailing P/E TTM" },
+  { ticker:"AMZN", name:"Amazon",             pe:  35,  type:"ttm", cat:"bigtech", note:"Trailing P/E TTM" },
+  { ticker:"AAPL", name:"Apple",              pe:  35,  type:"ttm", cat:"bigtech", note:"Trailing P/E TTM" },
+  { ticker:"ORCL", name:"Oracle",             pe:  31,  type:"ttm", cat:"bigtech", note:"Trailing P/E TTM" },
+  { ticker:"GOOGL",name:"Alphabet (Google)",  pe:  30,  type:"ttm", cat:"bigtech", note:"Trailing P/E TTM" },
+  { ticker:"META", name:"Meta",               pe:  30,  type:"ttm", cat:"bigtech", note:"Trailing P/E TTM" },
+  { ticker:"MSFT", name:"Microsoft",          pe:  24,  type:"ttm", cat:"bigtech", note:"Trailing P/E TTM" },
+  { ticker:"IBM",  name:"IBM",                pe:  20,  type:"ttm", cat:"bigtech", note:"Trailing P/E TTM" },
+
+  // AI-Native Software / Enterprise SaaS
+  { ticker:"PLTR", name:"Palantir",           pe: 167,  type:"fwd", cat:"aisoft",  note:"Forward P/E¹" },
+  { ticker:"CRWD", name:"CrowdStrike",        pe:  83,  type:"fwd", cat:"aisoft",  note:"Forward P/E¹" },
+  { ticker:"NOW",  name:"ServiceNow",         pe:  61,  type:"fwd", cat:"aisoft",  note:"Forward P/E¹" },
+  { ticker:"WDAY", name:"Workday",            pe:  49,  type:"ttm", cat:"aisoft",  note:"Trailing P/E TTM" },
+  { ticker:"CRM",  name:"Salesforce",         pe:  24,  type:"ttm", cat:"aisoft",  note:"Trailing P/E TTM" },
+
+  // Other AI-adjacent
+  { ticker:"INTC", name:"Intel",              pe:  87,  type:"fwd", cat:"other",   note:"Forward P/E¹ (TTM negative)" },
+];
+
+const UNPROFITABLE = [
+  { ticker:"SNOW", name:"Snowflake",    cat:"aisoft",  note:"GAAP net loss; adj. EPS ~$1.26" },
+  { ticker:"AI",   name:"C3.ai",        cat:"aisoft",  note:"GAAP net loss; P/E ~−2.7 (negative)" },
+];
+
+const CAT_META = {
+  chip:    { label:"Semiconductors",    color:"#a78bfa" },
+  bigtech: { label:"Big Tech / Cloud",  color:"#38bdf8" },
+  aisoft:  { label:"AI Software",       color:"#34d399" },
+  other:   { label:"Other AI",          color:"#fb923c" },
+};
+
+let activeFilter = "all";
+let sortMode = "desc";
+let chartInstance = null;
+
+function filtered() {
+  return activeFilter === "all"
+    ? [...ALL_COMPANIES]
+    : ALL_COMPANIES.filter(c => c.cat === activeFilter);
+}
+
+function sorted(arr) {
+  const copy = [...arr];
+  if (sortMode === "desc")  copy.sort((a,b) => b.pe - a.pe);
+  if (sortMode === "asc")   copy.sort((a,b) => a.pe - b.pe);
+  if (sortMode === "alpha") copy.sort((a,b) => a.name.localeCompare(b.name));
+  if (sortMode === "cat") {
+    const order = ["chip","bigtech","aisoft","other"];
+    copy.sort((a,b) => {
+      const diff = order.indexOf(a.cat) - order.indexOf(b.cat);
+      return diff !== 0 ? diff : b.pe - a.pe;
+    });
+  }
+  return copy;
+}
+
+function median(arr) {
+  const s = [...arr].sort((a,b) => a-b);
+  const m = Math.floor(s.length/2);
+  return s.length % 2 ? s[m] : (s[m-1]+s[m])/2;
+}
+
+function renderStats() {
+  const strip = document.getElementById("statsStrip");
+  const data = filtered();
+  const pes = data.map(c => c.pe);
+  const avg = pes.reduce((a,b) => a+b, 0) / pes.length;
+  const med = median(pes);
+  const highest = data.reduce((a,b) => a.pe > b.pe ? a : b);
+  const lowest  = data.reduce((a,b) => a.pe < b.pe ? a : b);
+
+  strip.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Avg P/E</div>
+      <div class="stat-value">${avg.toFixed(0)}x</div>
+      <div class="stat-sub">${data.length} companies shown</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Median P/E</div>
+      <div class="stat-value">${med.toFixed(0)}x</div>
+      <div class="stat-sub">Mid-point of range</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Highest P/E</div>
+      <div class="stat-value" style="color:var(--neg)">${highest.pe}x</div>
+      <div class="stat-sub">${highest.ticker} — ${highest.name}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Lowest P/E</div>
+      <div class="stat-value" style="color:var(--aisoft)">${lowest.pe}x</div>
+      <div class="stat-sub">${lowest.ticker} — ${lowest.name}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unprofitable</div>
+      <div class="stat-value" style="color:var(--muted)">${UNPROFITABLE.length}</div>
+      <div class="stat-sub">GAAP net loss — no TTM P/E</div>
+    </div>
+  `;
+}
+
+function renderNegGrid() {
+  const grid = document.getElementById("negGrid");
+  const negCard = document.getElementById("negCard");
+  const visible = activeFilter === "all"
+    ? UNPROFITABLE
+    : UNPROFITABLE.filter(c => c.cat === activeFilter);
+
+  if (visible.length === 0) { negCard.style.display = "none"; return; }
+  negCard.style.display = "block";
+
+  grid.innerHTML = visible.map(c => {
+    const meta = CAT_META[c.cat];
+    return `
+      <div class="neg-item">
+        <div class="ticker">${c.ticker}</div>
+        <div class="company-name">${c.name}</div>
+        <div class="pe-val">P/E: N/A</div>
+        <span class="cat-tag" style="background:${meta.color}22;color:${meta.color}">${meta.label}</span>
+        <div class="company-name" style="margin-top:6px">${c.note}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderChart() {
+  const data = sorted(filtered());
+  const height = data.length * 42 + 60;
+  document.getElementById("chartWrapper").style.height = height + "px";
+
+  const bgColors = data.map(c =>
+    c.type === "fwd"
+      ? CAT_META[c.cat].color + "55"
+      : CAT_META[c.cat].color + "cc"
+  );
+
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  const ctx = document.getElementById("peChart").getContext("2d");
+
+  chartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: data.map(c => `${c.ticker}  ${c.name}`),
+      datasets: [{
+        label: "P/E Ratio",
+        data: data.map(c => c.pe),
+        backgroundColor: bgColors,
+        borderColor: data.map(c => CAT_META[c.cat].color),
+        borderWidth: 1.5,
+        borderRadius: 5,
+        borderSkipped: false,
+      }],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 400, easing: "easeOutQuart" },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title(items) {
+              const c = data[items[0].dataIndex];
+              return `${c.ticker} — ${c.name}`;
+            },
+            label(item) {
+              const c = data[item.dataIndex];
+              return [
+                `  P/E: ${c.pe}x`,
+                `  Type: ${c.type === "fwd" ? "Forward estimate¹" : "Trailing TTM"}`,
+                `  Sector: ${CAT_META[c.cat].label}`,
+              ];
+            },
+          },
+          backgroundColor: "#1c2130",
+          borderColor: "#252c3e",
+          borderWidth: 1,
+          titleColor: "#e8ecf4",
+          bodyColor: "#8892a4",
+          padding: 12,
+          cornerRadius: 10,
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: "#252c3e" },
+          ticks: { color: "#8892a4", font: { size: 11 } },
+          title: {
+            display: true,
+            text: "Price-to-Earnings Ratio (x)",
+            color: "#8892a4",
+            font: { size: 12 },
+          },
+        },
+        y: {
+          grid: { display: false },
+          ticks: {
+            color: "#8892a4",
+            font: { size: 11.5, family: "'SF Mono', 'Fira Code', monospace" },
+            callback(val, idx) {
+              const c = data[idx];
+              return `${c.ticker}  ${c.pe}x${c.type === "fwd" ? " (fwd)" : ""}`;
+            },
+          },
+        },
+      },
+    },
+    plugins: [{
+      id: "catStripe",
+      afterDatasetsDraw(chart) {
+        const { ctx, scales } = chart;
+        const yScale = scales.y;
+        data.forEach((c, i) => {
+          const y = yScale.getPixelForValue(i);
+          const h = yScale.height / data.length;
+          ctx.save();
+          ctx.fillStyle = CAT_META[c.cat].color;
+          ctx.fillRect(chart.chartArea.left - 6, y - h * 0.38, 3, h * 0.76);
+          ctx.restore();
+        });
+      },
+    }],
+  });
+}
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = btn.dataset.cat;
+    update();
+  });
+});
+
+document.getElementById("sortSelect").addEventListener("change", e => {
+  sortMode = e.target.value;
+  update();
+});
+
+function update() {
+  renderStats();
+  renderChart();
+  renderNegGrid();
+}
+
+update();
+</script>
+</body>
+</html>
